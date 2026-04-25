@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import at.ac.fhcampuswien.controllers.MovieController;
 
 public class Main {
     private final static int SERVER_PORT = 8080;
@@ -14,9 +15,9 @@ public class Main {
         // Create an HTTP server listening on defined port
         HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_PORT), 0);
 
-        // Register controllers and their handlers - REST endpoints
+        // Register controllers and their handlers - REST endpoints 
         registerController(server, "/api/hello", new HelloController());
-
+        registerController(server, "/api/movies", new MovieController());
         // Start the server
         server.setExecutor(null);
         server.start();
