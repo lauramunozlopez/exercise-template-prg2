@@ -163,7 +163,7 @@ public class MovieController implements HttpHandler {
     ApiUtils.sendResponse(exchange, 200, "{ \"message\": \"Movie updated successfully\" }");
 }
 
-    // 🔧 reutilizamos JSON builder
+    //  JSON builder
     private String buildJson(List<Movie> movies) {
         StringBuilder json = new StringBuilder("[");
         for (int i = 0; i < movies.size(); i++) {
