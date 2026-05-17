@@ -14,7 +14,7 @@ public class MovieService {
 
     private MovieRepository movieRepository;
 
-    // Repository wird per Konstruktor injiziert (gut für Tests + Mockito) yo
+    // Repository wird per Konstruktor injiziert (gut für Tests + Mockito) yoa
     public MovieService(MovieRepository movieRepository) {
         this.movieRepository = movieRepository;
     }
