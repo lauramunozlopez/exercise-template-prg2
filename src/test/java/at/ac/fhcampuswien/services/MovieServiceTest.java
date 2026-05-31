@@ -13,7 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import at.ac.fhcampuswien.services.MovieSearchService;
 
 class MovieServiceTest {
 
@@ -33,7 +35,14 @@ class MovieServiceTest {
 
         when(movieRepository.findAll()).thenReturn(movies);
 
-        movieService = new MovieService(movieRepository);
+        MovieSearchService movieSearchService =
+        new MovieSearchService();
+
+movieService =
+        new MovieService(
+                movieRepository,
+                movieSearchService
+        );
     }
 
     @Test

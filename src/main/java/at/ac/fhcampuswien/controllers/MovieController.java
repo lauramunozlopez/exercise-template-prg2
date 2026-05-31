@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import at.ac.fhcampuswien.services.MovieSearchService;  ///new class S Parameter
 
 public class MovieController implements HttpHandler {
 
@@ -24,7 +25,11 @@ public class MovieController implements HttpHandler {
     private final String BASE = "/api/movies/";
 
     // MovieService bekommt jetzt ein MovieRepository statt einer Liste
-    private MovieService movieService = new MovieService(new MovieRepository());
+    private MovieService movieService =
+        new MovieService(
+                new MovieRepository(),
+                new MovieSearchService()
+        );
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {

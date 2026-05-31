@@ -7,45 +7,65 @@ import at.ac.fhcampuswien.repositories.MovieRepository;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-// Service: enthält die Business Logic und delegiert DB-Operationen ans Repository
 public class MovieService {
 
-    private MovieRepository movieRepository;
+    private final MovieRepository movieRepository;
+    private final MovieSearchService movieSearchService;
 
-    // Repository wird per Konstruktor injiziert (gut für Tests + Mockito) yoaa
-    public MovieService(MovieRepository movieRepository) {
+    public MovieService(MovieRepository movieRepository,
+                        MovieSearchService movieSearchService) {
+
         this.movieRepository = movieRepository;
+        this.movieSearchService = movieSearchService;
     }
 
     public List<Movie> getAllMovies() throws DatabaseException {
         return movieRepository.findAll();
     }
 
-    public List<Movie> searchMovies(String title, String genre, Integer releaseYear) throws DatabaseException {
-        return movieRepository.findAll().stream()
-                .filter(m -> title == null || m.getTitle().toLowerCase().contains(title.toLowerCase()))
-                .filter(m -> genre == null || m.getGenre().equalsIgnoreCase(genre))
-                .filter(m -> releaseYear == null || m.getReleaseYear() == releaseYear)
-                .collect(Collectors.toList());
+    public List<Movie> searchMovies(String title,
+                                    String genre,
+                                    Integer releaseYear)
+            throws DatabaseException {
+
+        List<Movie> movies = movieRepository.findAll();
+
+        return movieSearchService.searchMovies(
+                movies,
+                title,
+                genre,
+                releaseYear
+        );
     }
 
-    public void addMovie(String title, String genre, int releaseYear) throws DatabaseException {
+    public void addMovie(String title,
+                         String genre,
+                         int releaseYear)
+            throws DatabaseException {
+
         Movie movie = new Movie(title, genre, releaseYear);
         movieRepository.add(movie);
     }
 
-    public void deleteMovie(String title, String genre, int releaseYear)
+    public void deleteMovie(String title,
+                            String genre,
+                            int releaseYear)
             throws DatabaseException, MovieNotFoundException {
+
         Movie movie = new Movie(title, genre, releaseYear);
         movieRepository.delete(movie);
     }
 
-    public void updateMovie(String id, String title, String genre, int releaseYear)
+    public void updateMovie(String id,
+                            String title,
+                            String genre,
+                            int releaseYear)
             throws DatabaseException, MovieNotFoundException {
+
         Movie movie = new Movie(title, genre, releaseYear);
         movie.setId(UUID.fromString(id));
+
         movieRepository.update(movie);
     }
 }
