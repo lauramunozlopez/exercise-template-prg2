@@ -1,74 +1,39 @@
 package at.ac.fhcampuswien.controllers;
 
 import at.ac.fhcampuswien.ApiUtils;
+import at.ac.fhcampuswien.controllers.handlers.BaseHandler;
+import at.ac.fhcampuswien.controllers.handlers.InfoHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
+import java.util.HashMap;
+import java.util.Map;
 
 public class HelloController implements HttpHandler {
-    private final String BASE = "/api/hello/";
+    private static final String BASE = "/api/hello/";
+    private final Map<String, HttpAction> routes = new HashMap<>();
+
+    public HelloController() {
+        // Routes are registered here.
+        // To add a new endpoint tomorrow, you just add one line here, or inject this map!
+        routes.put(BASE, new BaseHandler());
+        routes.put(BASE + "greet", new GreetHandler());
+        routes.put(BASE + "info", new InfoHandler());
+    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-
-        String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
-        switch (path) {
-            case BASE -> handleBaseRequest(method, exchange);
-            case BASE + "greet" -> handleGreetRequest(method, exchange);
-            case BASE + "info" -> handleInfoRequest(method, exchange);
-            default -> {
-                String response = "{ \"error\": \"Path not found\" }";
-                ApiUtils.sendResponse(exchange, 404, response);
-            }
-        }
-    }
+        // Lookup the strategy based on the path
+        HttpAction action = routes.get(path);
 
-    private void handleBaseRequest(String method, HttpExchange exchange) throws IOException {
-        switch (method) {
-            case "GET" -> {
-                String response = "{ \"message\": \"Base endpoint in /api/hello/!\" }";
-                ApiUtils.sendResponse(exchange, 200, response);
-            }
-            default -> {
-                String response = "{ \"error\": \"Method not allowed\" }";
-                ApiUtils.sendResponse(exchange, 405, response);
-            }
-        }
-    }
-
-    private void handleGreetRequest(String method, HttpExchange exchange) throws IOException {
-        switch (method) {
-            case "GET" -> {
-                String response = "{ \"message\": \"Hello, friend!\" }";
-                ApiUtils.sendResponse(exchange, 200, response);
-            }
-            case "POST" -> {
-                String requestBody = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-                String response = "{ \"received\": " + requestBody + " }";
-                ApiUtils.sendResponse(exchange, 200, response);
-            }
-            default -> {
-                String response = "{ \"error\": \"Method not allowed\" }";
-                ApiUtils.sendResponse(exchange, 405, response);
-            }
-        }
-    }
-
-    private void handleInfoRequest(String method, HttpExchange exchange) throws IOException {
-        switch (method) {
-            case "GET" -> {
-                String response = "{ \"info\": \"This is the Hello API\" }";
-                ApiUtils.sendResponse(exchange, 200, response);
-            }
-            default -> {
-                String response = "{ \"error\": \"Method not allowed\" }";
-                ApiUtils.sendResponse(exchange, 405, response);
-            }
+        if (action != null) {
+            action.handle(exchange);
+        } else {
+            String response = "{ \"error\": \"Path not found\" }";
+            ApiUtils.sendResponse(exchange, 404, response);
         }
     }
 }

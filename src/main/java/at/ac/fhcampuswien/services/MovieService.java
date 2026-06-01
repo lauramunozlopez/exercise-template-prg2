@@ -3,69 +3,42 @@ package at.ac.fhcampuswien.services;
 import at.ac.fhcampuswien.exceptions.DatabaseException;
 import at.ac.fhcampuswien.exceptions.MovieNotFoundException;
 import at.ac.fhcampuswien.models.Movie;
-import at.ac.fhcampuswien.repositories.MovieRepository;
+import at.ac.fhcampuswien.repositories.IMovieRepository;
 
 import java.util.List;
-import java.util.UUID;
 
 public class MovieService {
 
-    private final MovieRepository movieRepository;
-    private final MovieSearchService movieSearchService;
+    private final IMovieRepository movieRepository;
 
-    public MovieService(MovieRepository movieRepository,
-                        MovieSearchService movieSearchService) {
-
+    // Fulfills DIP: Only depends on the Interface contract
+    public MovieService(IMovieRepository movieRepository) {
         this.movieRepository = movieRepository;
-        this.movieSearchService = movieSearchService;
     }
 
+    // Single Responsibility: Fetching listings
     public List<Movie> getAllMovies() throws DatabaseException {
         return movieRepository.findAll();
     }
 
-    public List<Movie> searchMovies(String title,
-                                    String genre,
-                                    Integer releaseYear)
+    // Single Responsibility: Query delegation
+    public List<Movie> searchMovies(String title, String genre, Integer releaseYear)
             throws DatabaseException {
-
-        List<Movie> movies = movieRepository.findAll();
-
-        return movieSearchService.searchMovies(
-                movies,
-                title,
-                genre,
-                releaseYear
-        );
+        return movieRepository.findByCriteria(title, genre, releaseYear);
     }
 
-    public void addMovie(String title,
-                         String genre,
-                         int releaseYear)
-            throws DatabaseException {
-
-        Movie movie = new Movie(title, genre, releaseYear);
+    // FIXED (SRP/OCP): The service no longer cares how a Movie object is manufactured
+    public void addMovie(Movie movie) throws DatabaseException {
         movieRepository.add(movie);
     }
 
-    public void deleteMovie(String title,
-                            String genre,
-                            int releaseYear)
-            throws DatabaseException, MovieNotFoundException {
-
-        Movie movie = new Movie(title, genre, releaseYear);
+    // FIXED (SRP/OCP): No hidden factory work or tight coupling to constructors
+    public void deleteMovie(Movie movie) throws DatabaseException, MovieNotFoundException {
         movieRepository.delete(movie);
     }
 
-    public void updateMovie(String id,
-                            String title,
-                            String genre,
-                            int releaseYear)
-            throws DatabaseException, MovieNotFoundException {
-
-        Movie movie = new Movie(title, genre, releaseYear);
-        movie.setId(UUID.fromString(id));
-
+    // FIXED (SRP/OCP): Updates are clean and clear
+    public void updateMovie(Movie movie) throws DatabaseException, MovieNotFoundException {
         movieRepository.update(movie);
     }
 }

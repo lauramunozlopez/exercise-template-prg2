@@ -3,7 +3,7 @@ package at.ac.fhcampuswien.services;
 import at.ac.fhcampuswien.exceptions.DatabaseException;
 import at.ac.fhcampuswien.exceptions.MovieNotFoundException;
 import at.ac.fhcampuswien.models.Movie;
-import at.ac.fhcampuswien.repositories.MovieRepository;
+import at.ac.fhcampuswien.repositories.IMovieRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,38 +11,35 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import at.ac.fhcampuswien.services.MovieSearchService;
 
 class MovieServiceTest {
 
     private MovieService movieService;
-    private MovieRepository movieRepository;
+    private IMovieRepository movieRepository;
 
     @BeforeEach
     void set_up() throws DatabaseException {
-        // Repository wird gemockt - wir brauchen keine echte Datenbank für Tests
-        movieRepository = mock(MovieRepository.class);
+        movieRepository = mock(IMovieRepository.class);
 
-        List<Movie> movies = new ArrayList<>(Arrays.asList(
+        List<Movie> allMovies = new ArrayList<>(Arrays.asList(
                 new Movie("Inception", "Sci-Fi", 2010),
                 new Movie("The Dark Knight", "Action", 2008),
                 new Movie("Interstellar", "Sci-Fi", 2014)
         ));
+        when(movieRepository.findAll()).thenReturn(allMovies);
 
-        when(movieRepository.findAll()).thenReturn(movies);
+        when(movieRepository.findByCriteria(null, "Sci-Fi", null))
+                .thenReturn(Arrays.asList(allMovies.get(0), allMovies.get(2)));
 
-        MovieSearchService movieSearchService =
-        new MovieSearchService();
+        when(movieRepository.findByCriteria("inter", null, null))
+                .thenReturn(Arrays.asList(allMovies.get(2)));
 
-movieService =
-        new MovieService(
-                movieRepository,
-                movieSearchService
-        );
+        movieService = new MovieService(movieRepository);
     }
 
     @Test
@@ -59,7 +56,6 @@ movieService =
 
     @Test
     void givenPartialTitle_whenSearchMovies_thenReturnMatchingMovies() throws DatabaseException {
-        // "inter" soll "Interstellar" finden (Groß/Kleinschreibung egal)
         List<Movie> result = movieService.searchMovies("inter", null, null);
         assertEquals(1, result.size());
         assertEquals("Interstellar", result.get(0).getTitle());
@@ -68,7 +64,11 @@ movieService =
     @Test
     void givenNewMovie_whenAddMovie_thenRepositoryAddIsCalled() throws DatabaseException {
         doNothing().when(movieRepository).add(any(Movie.class));
-        assertDoesNotThrow(() -> movieService.addMovie("Dune", "Sci-Fi", 2021));
+
+        // FIXED: Wrap variables into a single Movie object instead of passing 3 arguments
+        Movie targetMovie = new Movie("Dune", "Sci-Fi", 2021);
+        assertDoesNotThrow(() -> movieService.addMovie(targetMovie));
+
         verify(movieRepository, times(1)).add(any(Movie.class));
     }
 
@@ -78,13 +78,13 @@ movieService =
     void givenDbError_whenDeleteMovie_thenThrowDatabaseException()
             throws DatabaseException, MovieNotFoundException {
 
-        // Simuliert einen Datenbankfehler beim Löschen
         doThrow(new DatabaseException("Datenbankverbindung fehlgeschlagen"))
                 .when(movieRepository).delete(any(Movie.class));
 
-        // DatabaseException soll weiterpropagiert werden
+        // FIXED: Passing a single Movie object to reflect the new signature
+        Movie movieToDelete = new Movie("Inception", "Sci-Fi", 2010);
         assertThrows(DatabaseException.class, () -> {
-            movieService.deleteMovie("Inception", "Sci-Fi", 2010);
+            movieService.deleteMovie(movieToDelete);
         });
     }
 
@@ -92,16 +92,16 @@ movieService =
     void givenNonExistingId_whenUpdateMovie_thenThrowMovieNotFoundException()
             throws DatabaseException, MovieNotFoundException {
 
-        // Simuliert dass der Film in der DB nicht existiert
         doThrow(new MovieNotFoundException("Film nicht gefunden"))
                 .when(movieRepository).update(any(Movie.class));
 
-        // MovieNotFoundException soll weiterpropagiert werden
+        // FIXED: Wrap data into a single Movie object and assign a specific UUID
+        // to match the exact structural interface pattern used in your handlers
+        Movie movieToUpdate = new Movie("Ghost Movie", "Horror", 2020);
+        movieToUpdate.setId(UUID.fromString("00000000-0000-0000-0000-000000000000"));
+
         assertThrows(MovieNotFoundException.class, () -> {
-            movieService.updateMovie(
-                    "00000000-0000-0000-0000-000000000000",
-                    "Ghost Movie", "Horror", 2020
-            );
+            movieService.updateMovie(movieToUpdate);
         });
     }
 }

@@ -56,7 +56,7 @@ public class MovieRepository {
         return movies;
     }
 
-    public void delete(Movie movie) throws DatabaseException, MovieNotFoundException {
+    public void delete(Movie movie) throws DatabaseException, MovieNotFoundException{
         String sql = "DELETE FROM movies WHERE title = ? AND genre = ? AND release_year = ?";
         try {
             Connection conn = DatabaseUtil.getConnection();
